@@ -12,7 +12,7 @@ import '../templates/middleware'
 Vue.mixin(mixin)
 Vue.component(component.name, component)
 
-export default function ({ req, res, beforeNuxtRender, nuxtState }, inject) {
+export default function ({ route,req, res, beforeNuxtRender, nuxtState }, inject) {
     translate.translations = {}
     if (process.server) {
         beforeNuxtRender(({ nuxtState }) => {
@@ -41,7 +41,14 @@ export default function ({ req, res, beforeNuxtRender, nuxtState }, inject) {
     let locale = cookies.get(options.languageCookieKey)
     if (!locale) {
         if (process.server) {
-            locale = serverLocale.pick(supportedLocales, req.headers['accept-language'])
+            // read locale from url, if not use accept header.
+            locale = supportedLocales.find( (lang) => {
+                const regexp = new RegExp(`^/${lang}/`)
+                return route.path.match(regexp)
+            })
+            if (!locale) {
+                locale = serverLocale.pick(supportedLocales, req.headers['accept-language'])
+            }
         } else {
             const clientLocales = clientLocale()
             for (const l of clientLocales) {
